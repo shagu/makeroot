@@ -20,14 +20,21 @@ source core/helpers
 mkdir -p $ROOTFS_DIR
 mkdir -p $LOG_DIR
 
+# clean old logs
+rm -f $LOGS_DIR/*.log
+
 if [ ! -f $ROOTFS_DIR/bin/bash ]; then
   # prepare distro
-  do_distro &> $LOG_DIR/do_distro.log
+  echo "-> do_distro"
+  do_distro >> $LOG_DIR/do_distro.log
 fi
 
 # prepare chroot
 trap do_umount EXIT
 do_mount
+
+# move specified files into rootfs
+do_files
 
 # run build steps
 for step in $build_steps; do
@@ -36,3 +43,5 @@ for step in $build_steps; do
     run $step
   fi
 done
+
+exit 0
