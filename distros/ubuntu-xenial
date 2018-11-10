@@ -1,0 +1,3 @@
+debootstrap xenial $TARGET_DIR http://archive.ubuntu.com/ubuntu/
+sed -i 's/xenial main$/xenial main universe multiverse/g' $TARGET_DIR/etc/apt/sources.list
+cp -L /etc/resolv.conf $TARGET_DIR/etc/resolv.conf

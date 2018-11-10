@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# load recipe informations
+source recipes/$RECIPE
+
+echo
+echo "##"
+echo "# RECIPE: $RECIPE"
+echo "# DISTRO: $DISTRO"
+echo "#"
+echo
+
+# load build core
+source core/config
+source core/variables
+source core/helpers
+
+# prepare target dir
+mkdir -p $TARGET_DIR
+
+# prepare distro
+source distros/$DISTRO
+
+# prepare chroot
+trap pseudo_umount EXIT
+pseudo_mount
+
+# run build steps
+for step in $build_steps; do
+  # only run existing functions
+  if declare -f $step &> /dev/null; then
+    run $step
+  fi
+done

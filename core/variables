@@ -1,0 +1,9 @@
+#!/bin/bash
+
+build_steps=" \
+  do_depends \
+  do_prepare \
+  do_compile \
+  do_install \
+  do_cleanup \
+"

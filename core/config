@@ -1,0 +1,3 @@
+#!/bin/bash
+
+TARGET_DIR=build/$RECIPE/rootfs

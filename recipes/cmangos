@@ -1,0 +1,10 @@
+DISTRO=ubuntu-xenial
+
+do_depends () {
+  apt-get update
+  apt-get install -y libace-dev git build-essential \
+    gcc g++ automake autoconf make patch libmysql++-dev libtool \
+    libssl-dev grep binutils zlibc libc6 libbz2-dev cmake \
+    libboost-dev libboost-system-dev libboost-program-options-dev \
+    libboost-thread-dev libboost-regex-dev
+}
