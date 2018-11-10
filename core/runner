@@ -2,6 +2,7 @@
 
 # load recipe informations
 source recipes/$RECIPE
+source distros/$DISTRO
 
 echo
 echo "##"
@@ -16,10 +17,13 @@ source core/variables
 source core/helpers
 
 # prepare target dir
-mkdir -p $TARGET_DIR
+mkdir -p $ROOTFS_DIR
+mkdir -p $LOG_DIR
 
-# prepare distro
-source distros/$DISTRO
+if [ ! -f $ROOTFS_DIR/bin/bash ]; then
+  # prepare distro
+  do_distro &> $LOG_DIR/do_distro.log
+fi
 
 # prepare chroot
 trap pseudo_umount EXIT

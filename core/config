@@ -1,3 +1,7 @@
 #!/bin/bash
 
-TARGET_DIR=build/$RECIPE/rootfs
+BUILD_DIR=build
+TARGET_DIR=$BUILD_DIR/$RECIPE
+
+ROOTFS_DIR=$TARGET_DIR/rootfs
+LOG_DIR=$TARGET_DIR/logs

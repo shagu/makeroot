@@ -2,27 +2,27 @@
 
 function pseudo_umount {
   echo "-> do_umount"
-  umount -R $TARGET_DIR/dev
-  umount -R $TARGET_DIR/proc
-  umount -R $TARGET_DIR/sys
-  umount -R $TARGET_DIR/tmp
+  umount -R $ROOTFS_DIR/dev
+  umount -R $ROOTFS_DIR/proc
+  umount -R $ROOTFS_DIR/sys
+  umount -R $ROOTFS_DIR/tmp
 }
 
 function pseudo_mount {
   echo "-> do_mount"
-  mount --rbind /dev $TARGET_DIR/dev
-  mount --make-rslave $TARGET_DIR/dev
-  mount --rbind /sys $TARGET_DIR/sys
-  mount --make-rslave $TARGET_DIR/sys
-  mount --rbind /tmp $TARGET_DIR/tmp
-  mount -t proc /proc $TARGET_DIR/proc
+  mount --rbind /dev $ROOTFS_DIR/dev
+  mount --make-rslave $ROOTFS_DIR/dev
+  mount --rbind /sys $ROOTFS_DIR/sys
+  mount --make-rslave $ROOTFS_DIR/sys
+  mount --rbind /tmp $ROOTFS_DIR/tmp
+  mount -t proc /proc $ROOTFS_DIR/proc
 }
 
 function run {
   echo "-> $1"
-  declare -f $1 > $TARGET_DIR/tmp/$1.sh
-  echo $1 >> $TARGET_DIR/tmp/$1.sh
-  chmod +x $TARGET_DIR/tmp/$1.sh
-  chroot $TARGET_DIR /bin/bash /tmp/$1.sh
-  rm -f $TARGET_DIR/tmp/$1.sh
+  declare -f $1 > $ROOTFS_DIR/tmp/$1.sh
+  echo $1 >> $ROOTFS_DIR/tmp/$1.sh
+  chmod +x $ROOTFS_DIR/tmp/$1.sh
+  chroot $ROOTFS_DIR /bin/bash /tmp/$1.sh $> $ROOTFS_DIR/../logs/$1.log
+  rm -f $ROOTFS_DIR/tmp/$1.sh
 }
