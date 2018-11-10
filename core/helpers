@@ -10,11 +10,9 @@ function pseudo_umount {
 
 function pseudo_mount {
   echo "-> do_mount"
-  mount --rbind /dev $ROOTFS_DIR/dev
-  mount --make-rslave $ROOTFS_DIR/dev
-  mount --rbind /sys $ROOTFS_DIR/sys
-  mount --make-rslave $ROOTFS_DIR/sys
-  mount --rbind /tmp $ROOTFS_DIR/tmp
+  mount /dev $ROOTFS_DIR/dev -o bind
+  mount /sys $ROOTFS_DIR/sys -o bind
+  mount /tmp $ROOTFS_DIR/tmp -o bind
   mount -t proc /proc $ROOTFS_DIR/proc
 }
 
