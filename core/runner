@@ -26,8 +26,8 @@ if [ ! -f $ROOTFS_DIR/bin/bash ]; then
 fi
 
 # prepare chroot
-trap pseudo_umount EXIT
-pseudo_mount
+trap do_umount EXIT
+do_mount
 
 # run build steps
 for step in $build_steps; do

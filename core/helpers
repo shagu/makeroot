@@ -1,21 +1,5 @@
 #!/bin/bash
 
-function pseudo_umount {
-  echo "-> do_umount"
-  umount -R $ROOTFS_DIR/dev
-  umount -R $ROOTFS_DIR/proc
-  umount -R $ROOTFS_DIR/sys
-  umount -R $ROOTFS_DIR/tmp
-}
-
-function pseudo_mount {
-  echo "-> do_mount"
-  mount /dev $ROOTFS_DIR/dev -o bind
-  mount /sys $ROOTFS_DIR/sys -o bind
-  mount /tmp $ROOTFS_DIR/tmp -o bind
-  mount -t proc /proc $ROOTFS_DIR/proc
-}
-
 function run {
   echo "-> $1"
   declare -f $1 > $ROOTFS_DIR/tmp/$1.sh
@@ -23,4 +7,20 @@ function run {
   chmod +x $ROOTFS_DIR/tmp/$1.sh
   chroot $ROOTFS_DIR /bin/bash /tmp/$1.sh $> $ROOTFS_DIR/../logs/$1.log
   rm -f $ROOTFS_DIR/tmp/$1.sh
+}
+
+function do_umount {
+  echo "-> do_umount"
+  umount -R $ROOTFS_DIR/dev
+  umount -R $ROOTFS_DIR/proc
+  umount -R $ROOTFS_DIR/sys
+  umount -R $ROOTFS_DIR/tmp
+}
+
+function do_mount {
+  echo "-> do_mount"
+  mount /dev $ROOTFS_DIR/dev -o bind
+  mount /sys $ROOTFS_DIR/sys -o bind
+  mount /tmp $ROOTFS_DIR/tmp -o bind
+  mount -t proc /proc $ROOTFS_DIR/proc
 }
