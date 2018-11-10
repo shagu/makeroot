@@ -1,5 +1,9 @@
 DISTRO=ubuntu-xenial
 
+FILES="\
+  WoW-1.12.1-enUS.zip \
+"
+
 do_depends () {
   apt-get update
   apt-get install -y libace-dev git build-essential \
