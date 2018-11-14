@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# setup temporary variables
+BASE_DIR=$(pwd)
+
 # load recipe informations
 source recipes/$RECIPE/recipe
 source distros/$DISTRO
@@ -23,15 +26,26 @@ mkdir -p $LOG_DIR
 # clean old logs
 rm -f $LOGS_DIR/*.log
 
-if [ ! -f $ROOTFS_DIR/bin/bash ]; then
+if [ ! -f $ROOTFS_DIR/bin/bash ] || [ -n "${REBUILD}" ]; then
   # prepare distro
-  echo "-> do_distro"
-  do_distro >> $LOG_DIR/do_distro.log
+  progress "do_distro"
+  do_distro | log do_distro
+
+  # create lxc config
+  echo "lxc.include = /usr/share/lxc/config/common.conf" > ${TARGET_DIR}/config
+  echo "lxc.rootfs.path = dir:/var/lib/lxc/${RECIPE}/rootfs" >> ${TARGET_DIR}/config
+  echo "lxc.uts.name = $RECIPE" >> ${TARGET_DIR}/config
+  echo "lxc.arch = amd64" >> ${TARGET_DIR}/config
+  echo "lxc.net.0.type = none" >> ${TARGET_DIR}/config
 fi
 
-# prepare chroot
-trap do_umount EXIT
-do_mount
+# start lxc-container and clean up on exit
+trap "lxc-stop -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR}" EXIT
+lxc-start -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -s lxc.rootfs.path=${BASE_DIR}/${ROOTFS_DIR}
+
+# copy resolv.conf into rootfs
+rm ${ROOTFS_DIR}/etc/resolv.conf
+cp -L /etc/resolv.conf ${ROOTFS_DIR}/etc/resolv.conf
 
 # move specified files into rootfs
 do_files
