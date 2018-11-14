@@ -5,7 +5,7 @@ function progress {
 }
 
 function log {
-  tee -a $LOG_DIR/$1.log > $LOG_DIR/makeroot.log
+  tee -a $LOG_DIR/$1.log >> $LOG_DIR/makeroot.log
   echo
 }
 
