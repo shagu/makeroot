@@ -1,0 +1,16 @@
+DESCRIPTION="Collection of scripts and metadata to create custom Linux-based systems"
+DISTRO=ubuntu-xenial
+
+do_depends () {
+  apt-get update
+  apt-get install -y gawk wget git-core diffstat unzip texinfo gcc-multilib \
+    build-essential chrpath socat libsdl1.2-dev xterm
+}
+
+do_prepare () {
+  useradd yocto -m -G users,sudo
+}
+
+do_install () {
+  su -l yocto -c 'git clone git://git.yoctoproject.org/poky'
+}
