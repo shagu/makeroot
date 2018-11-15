@@ -1,8 +1,20 @@
 #!/bin/bash
 
-# setup temporary variables
+# setup default variables
 START_TIME=$(date +%s)
+
 BASE_DIR=$(pwd)
+BUILD_DIR=build
+TARGET_DIR=$BUILD_DIR/$RECIPE
+ROOTFS_DIR=$TARGET_DIR/rootfs
+LOG_DIR=$TARGET_DIR/logs
+
+CONTAINER_BACKEND="lxc"
+
+# load user config if exists
+if [ -f $BUILD_DIR/local.conf ]; then
+  source $BUILD_DIR/local.conf
+fi
 
 # load recipe informations
 source recipes/$RECIPE/recipe
@@ -16,7 +28,6 @@ echo "#"
 echo
 
 # load build core
-source core/config
 source core/variables
 source core/helpers
 
