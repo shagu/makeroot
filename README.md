@@ -8,4 +8,4 @@ A simple lxc or chroot container creation tool written in bash. The structure is
 
     # make yocto
 
-*Create a ubuntu container including all yocto prerequisites*
+*(Creates a ubuntu container including all yocto prerequisites)*
