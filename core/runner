@@ -14,6 +14,8 @@ echo "# DISTRO: $DISTRO"
 echo "#"
 echo
 
+START_TIME=$(date +%s)
+
 # load build core
 source core/config
 source core/variables
@@ -45,4 +47,5 @@ for step in $build_steps; do
   fi
 done
 
-exit 0
+echo
+echo "Build of \"$RECIPE\" completed after $(expr $(date +%s) - $START_TIME) seconds."

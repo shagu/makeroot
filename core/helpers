@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function progress {
-  echo "-> $1"
+  echo -n "-> $1"
 }
 
 function log {
@@ -13,8 +13,17 @@ function error {
 }
 
 function run {
-  progress "$1"
+  progress "$1 "
+
+  tbegin=$(date +%s)
   $1 | log $1
+  duration=$(expr $(date +%s) - $tbegin)
+
+  if [ "$duration" = "0" ]; then
+    echo
+  else
+    echo "[$duration seconds]"
+  fi
 }
 
 function do_files {
