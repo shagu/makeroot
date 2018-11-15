@@ -39,9 +39,8 @@ if [ ! -f $ROOTFS_DIR/bin/bash ] || [ -n "${REBUILD}" ]; then
   echo "lxc.net.0.type = none" >> ${TARGET_DIR}/config
 fi
 
-# start lxc-container and clean up on exit
-trap "lxc-stop -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR}" EXIT
-lxc-start -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -s lxc.rootfs.path=${BASE_DIR}/${ROOTFS_DIR}
+# launch the container
+container_start
 
 # copy resolv.conf into rootfs
 rm ${ROOTFS_DIR}/etc/resolv.conf

@@ -9,12 +9,16 @@ function log {
   echo
 }
 
+function error {
+  echo "ERROR: $1"
+}
+
 function run {
   progress "$1"
   declare -f $1 > $ROOTFS_DIR/tmp/$1.sh
   echo $1 >> $ROOTFS_DIR/tmp/$1.sh
   chmod +x $ROOTFS_DIR/tmp/$1.sh
-  lxc-attach -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -- /bin/bash /tmp/$1.sh | log $1
+  $CONTAINER_CMD /bin/bash /tmp/$1.sh | log $1
   rm -f $ROOTFS_DIR/tmp/$1.sh
 }
 
@@ -30,4 +34,31 @@ function do_files {
       echo "WARNING: $file not found."
     fi
   done
+}
+
+function container_start {
+  if [ "$CONTAINER_BACKEND" = "lxc" ]; then
+    # set the default container command to lxc-attach
+    export CONTAINER_CMD="lxc-attach -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} --"
+
+    # create a trap to properly clean up on exit
+    trap "lxc-stop -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR}" EXIT
+
+    # start the container
+    lxc-start -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -s lxc.rootfs.path=${BASE_DIR}/${ROOTFS_DIR}
+  elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
+    # set the default container command to chroot
+    export CONTAINER_CMD="chroot $ROOTFS_DIR"
+
+    # create a trap to properly clean up on exit
+    trap "umount -R $ROOTFS_DIR/dev $ROOTFS_DIR/proc $ROOTFS_DIR/sys $ROOTFS_DIR/tmp" EXIT
+
+    # prepare the container
+    mount -t devtmpfs none $ROOTFS_DIR/dev
+    mount -t sysfs    none $ROOTFS_DIR/sys
+    mount -t tmpfs    none $ROOTFS_DIR/tmp
+    mount -t proc     none $ROOTFS_DIR/proc
+  else
+    error "Unknown container backend \"$CONTAINER_BACKEND\""
+  fi
 }
