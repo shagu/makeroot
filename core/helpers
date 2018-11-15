@@ -51,21 +51,15 @@ function do_container {
   container_start
 
   # copy resolv.conf into rootfs
-  rm ${ROOTFS_DIR}/etc/resolv.conf
+  rm -f ${ROOTFS_DIR}/etc/resolv.conf
   cp -L /etc/resolv.conf ${ROOTFS_DIR}/etc/resolv.conf
 }
 
 function container_start {
   if [ "$CONTAINER_BACKEND" = "lxc" ]; then
-    # create a trap to properly clean up on exit
-    trap "lxc-stop -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR}" EXIT
-
     # start the container
-    lxc-start -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -s lxc.rootfs.path=${BASE_DIR}/${ROOTFS_DIR}
+    lxc-start -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -s lxc.rootfs.path=${BASE_DIR}/${ROOTFS_DIR} -l DEBUG
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
-    # create a trap to properly clean up on exit
-    trap "umount -R $ROOTFS_DIR/dev $ROOTFS_DIR/proc $ROOTFS_DIR/sys $ROOTFS_DIR/tmp" EXIT
-
     # prepare the container
     mount -t devtmpfs none $ROOTFS_DIR/dev
     mount -t sysfs    none $ROOTFS_DIR/sys
@@ -73,6 +67,14 @@ function container_start {
     mount -t proc     none $ROOTFS_DIR/proc
   else
     error "Unknown container backend \"$CONTAINER_BACKEND\""
+  fi
+}
+
+function container_stop {
+  if [ "$CONTAINER_BACKEND" = "lxc" ]; then
+    lxc-stop -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR}
+  elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
+    umount -R $ROOTFS_DIR/dev $ROOTFS_DIR/proc $ROOTFS_DIR/sys $ROOTFS_DIR/tmp
   fi
 }
 

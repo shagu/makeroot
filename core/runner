@@ -47,6 +47,9 @@ fi
 # initialize the container
 run do_container
 
+# create a trap to properly clean up on exit
+trap container_stop EXIT INT
+
 # move specified files into rootfs
 run do_files
 
