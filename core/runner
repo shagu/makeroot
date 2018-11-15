@@ -2,14 +2,12 @@
 
 # setup default variables
 START_TIME=$(date +%s)
-
-BASE_DIR=$(pwd)
-BUILD_DIR=build
-TARGET_DIR=$BUILD_DIR/$RECIPE
-ROOTFS_DIR=$TARGET_DIR/rootfs
-LOG_DIR=$TARGET_DIR/logs
-
-CONTAINER_BACKEND="lxc"
+BASE_DIR=${BASE_DIR:-$(pwd)}
+BUILD_DIR=${BUILD_DIR:-build}
+TARGET_DIR=${TARGET_DIR:-$BUILD_DIR/$RECIPE}
+ROOTFS_DIR=${ROOTFS_DIR:-$TARGET_DIR/rootfs}
+LOG_DIR=${LOG_DIR:-$TARGET_DIR/logs}
+CONTAINER_BACKEND=${CONTAINER_BACKEND:-lxc}
 
 # load user config if exists
 if [ -f $BUILD_DIR/local.conf ]; then
