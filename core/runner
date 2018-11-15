@@ -24,6 +24,9 @@ echo "# RECIPE: $RECIPE"
 echo "# DISTRO: $DISTRO"
 echo "#"
 echo
+echo "To view the complete log, run:"
+echo "  \`tail -f $BASE_DIR/$TARGET_DIR/logs/makeroot.log\`"
+echo
 
 # load build core
 source core/variables
