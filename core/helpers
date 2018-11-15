@@ -16,8 +16,8 @@ function run {
   progress "$1 "
 
   tbegin=$(date +%s)
-  $1 | log $1
-  duration=$(expr $(date +%s) - $tbegin)
+  $1 2>&1 | log $1
+  duration=$(expr $(date +%s) - $tbegin || true)
 
   if [ "$duration" = "0" ]; then
     echo
