@@ -28,7 +28,6 @@ rm -f $LOGS_DIR/*.log
 
 if [ ! -f $ROOTFS_DIR/bin/bash ] || [ -n "${REBUILD}" ]; then
   # prepare distro
-  progress "do_distro"
   run do_distro
 fi
 
