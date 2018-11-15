@@ -37,7 +37,7 @@ mkdir -p $ROOTFS_DIR
 mkdir -p $LOG_DIR
 
 # clean old logs
-rm -f $LOGS_DIR/*.log
+rm -f $LOG_DIR/*.log
 
 if [ ! -f $ROOTFS_DIR/bin/bash ] || [ -n "${REBUILD}" ]; then
   # prepare distro
