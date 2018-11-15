@@ -6,7 +6,6 @@ function progress {
 
 function log {
   tee -a $LOG_DIR/$1.log >> $LOG_DIR/makeroot.log
-  echo
 }
 
 function error {
@@ -15,15 +14,10 @@ function error {
 
 function run {
   progress "$1"
-  declare -f $1 > $ROOTFS_DIR/tmp/$1.sh
-  echo $1 >> $ROOTFS_DIR/tmp/$1.sh
-  chmod +x $ROOTFS_DIR/tmp/$1.sh
-  $CONTAINER_CMD /bin/bash /tmp/$1.sh | log $1
-  rm -f $ROOTFS_DIR/tmp/$1.sh
+  $1 | log $1
 }
 
 function do_files {
-  progress "do_files"
   for file in $FILES; do
     mkdir -p $ROOTFS_DIR/var/files
     if [ -f recipes/$RECIPE/files/$file ]; then
@@ -36,20 +30,30 @@ function do_files {
   done
 }
 
+function do_container {
+  # create container metadata
+  echo "lxc.include = /usr/share/lxc/config/common.conf" > ${TARGET_DIR}/config
+  echo "lxc.rootfs.path = dir:/var/lib/lxc/${RECIPE}/rootfs" >> ${TARGET_DIR}/config
+  echo "lxc.uts.name = $RECIPE" >> ${TARGET_DIR}/config
+  echo "lxc.arch = amd64" >> ${TARGET_DIR}/config
+  echo "lxc.net.0.type = none" >> ${TARGET_DIR}/config
+
+  # launch the container
+  container_start
+
+  # copy resolv.conf into rootfs
+  rm ${ROOTFS_DIR}/etc/resolv.conf
+  cp -L /etc/resolv.conf ${ROOTFS_DIR}/etc/resolv.conf
+}
+
 function container_start {
   if [ "$CONTAINER_BACKEND" = "lxc" ]; then
-    # set the default container command to lxc-attach
-    export CONTAINER_CMD="lxc-attach -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} --"
-
     # create a trap to properly clean up on exit
     trap "lxc-stop -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR}" EXIT
 
     # start the container
     lxc-start -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -s lxc.rootfs.path=${BASE_DIR}/${ROOTFS_DIR}
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
-    # set the default container command to chroot
-    export CONTAINER_CMD="chroot $ROOTFS_DIR"
-
     # create a trap to properly clean up on exit
     trap "umount -R $ROOTFS_DIR/dev $ROOTFS_DIR/proc $ROOTFS_DIR/sys $ROOTFS_DIR/tmp" EXIT
 
@@ -61,4 +65,27 @@ function container_start {
   else
     error "Unknown container backend \"$CONTAINER_BACKEND\""
   fi
+}
+
+function container_run {
+  # place function inside rootfs
+  declare -f $1 > $ROOTFS_DIR/tmp/$1.sh
+  echo $1 >> $ROOTFS_DIR/tmp/$1.sh
+  chmod +x $ROOTFS_DIR/tmp/$1.sh
+
+  # set the proper container run command
+  if [ "$CONTAINER_BACKEND" = "lxc" ]; then
+    export CONTAINER_CMD="lxc-attach -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} --"
+  elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
+    export CONTAINER_CMD="chroot $ROOTFS_DIR"
+  fi
+
+  # convert function to be runnable on host
+  eval "function $(echo $1) { $CONTAINER_CMD /bin/bash /tmp/$1.sh; }"
+
+  # run the function
+  run $1
+
+  # clean up
+  rm -f $ROOTFS_DIR/tmp/$1.sh
 }

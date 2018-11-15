@@ -29,31 +29,20 @@ rm -f $LOGS_DIR/*.log
 if [ ! -f $ROOTFS_DIR/bin/bash ] || [ -n "${REBUILD}" ]; then
   # prepare distro
   progress "do_distro"
-  do_distro | log do_distro
-
-  # create lxc config
-  echo "lxc.include = /usr/share/lxc/config/common.conf" > ${TARGET_DIR}/config
-  echo "lxc.rootfs.path = dir:/var/lib/lxc/${RECIPE}/rootfs" >> ${TARGET_DIR}/config
-  echo "lxc.uts.name = $RECIPE" >> ${TARGET_DIR}/config
-  echo "lxc.arch = amd64" >> ${TARGET_DIR}/config
-  echo "lxc.net.0.type = none" >> ${TARGET_DIR}/config
+  run do_distro
 fi
 
-# launch the container
-container_start
-
-# copy resolv.conf into rootfs
-rm ${ROOTFS_DIR}/etc/resolv.conf
-cp -L /etc/resolv.conf ${ROOTFS_DIR}/etc/resolv.conf
+# initialize the container
+run do_container
 
 # move specified files into rootfs
-do_files
+run do_files
 
 # run build steps
 for step in $build_steps; do
   # only run existing functions
   if declare -f $step &> /dev/null; then
-    run $step
+    container_run $step
   fi
 done
 
