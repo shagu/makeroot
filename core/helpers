@@ -63,6 +63,8 @@ function container_start {
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
     # prepare the container
     mount -t devtmpfs none $ROOTFS_DIR/dev
+    mount -t devpts   none $ROOTFS_DIR/dev/pts
+    mount -t tmpfs    none $ROOTFS_DIR/dev/shm
     mount -t sysfs    none $ROOTFS_DIR/sys
     mount -t tmpfs    none $ROOTFS_DIR/tmp
     mount -t proc     none $ROOTFS_DIR/proc
@@ -76,7 +78,7 @@ function container_stop {
   if [ "$CONTAINER_BACKEND" = "lxc" ]; then
     lxc-stop -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR}
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
-    umount -R $ROOTFS_DIR/dev $ROOTFS_DIR/proc $ROOTFS_DIR/sys $ROOTFS_DIR/tmp
+    umount -R $ROOTFS_DIR/dev/{pts,shm} $ROOTFS_DIR/dev $ROOTFS_DIR/proc $ROOTFS_DIR/sys $ROOTFS_DIR/tmp
   fi
 }
 
