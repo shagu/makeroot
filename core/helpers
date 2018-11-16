@@ -8,15 +8,12 @@ function log {
   tee -a $LOG_DIR/$1.log >> $LOG_DIR/makeroot.log
 }
 
-function error {
-  echo "ERROR: $1"
-}
-
 function run {
   progress "$1 "
 
+  trap "echo -e '[\033[91;1mERROR\033[0m]\033[2m'; tail $LOG_DIR/$1.log; echo -e '\033[0m'; exit 1" ERR
   tbegin=$(date +%s)
-  $1 2>&1 | log $1
+  $1 2>&1 | log $1 ; test ${PIPESTATUS[0]} -eq 0
   duration=$(expr $(date +%s) - $tbegin || true)
 
   if [ "$duration" = "0" ]; then
@@ -66,7 +63,8 @@ function container_start {
     mount -t tmpfs    none $ROOTFS_DIR/tmp
     mount -t proc     none $ROOTFS_DIR/proc
   else
-    error "Unknown container backend \"$CONTAINER_BACKEND\""
+    echo "Unknown container backend \"$CONTAINER_BACKEND\""
+    exit 1
   fi
 }
 
