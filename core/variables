@@ -1,9 +1,22 @@
 #!/bin/bash
 
+# format: opts:step
+#
+# opts
+#   0 = native
+#   1 = container
+#
+# step
+#   name of the step
+#
+
 build_steps=" \
-  do_depends \
-  do_prepare \
-  do_compile \
-  do_install \
-  do_cleanup \
+  0:do_distro \
+  0:do_container \
+  0:do_files \
+  1:do_depends \
+  1:do_prepare \
+  1:do_compile \
+  1:do_install \
+  1:do_cleanup \
 "

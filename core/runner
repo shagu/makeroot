@@ -39,23 +39,21 @@ mkdir -p $LOG_DIR
 # clean old logs
 rm -f $LOG_DIR/*.log
 
-# prepare distro
-run do_distro
-
-# initialize the container
-run do_container
-
 # create a trap to properly clean up on exit
 trap container_stop EXIT INT
 
-# move specified files into rootfs
-run do_files
+# run all build steps
+for entry in $build_steps; do
+  opts=$(echo $entry | cut -d : -f 1)
+  step=$(echo $entry | cut -d : -f 2)
 
-# run build steps
-for step in $build_steps; do
   # only run existing functions
   if declare -f $step &> /dev/null; then
-    container_run $step
+    if [ $opts = "1" ]; then
+      container_run $step
+    else
+      run $step
+    fi
   fi
 done
 
