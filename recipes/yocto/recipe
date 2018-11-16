@@ -8,9 +8,13 @@ do_depends () {
 }
 
 do_prepare () {
-  useradd yocto -m -G users,sudo
+  if ! grep /etc/passwd yocto; then
+    useradd yocto -m -G users,sudo || true
+  fi
 }
 
 do_install () {
-  su -l yocto -c 'git clone git://git.yoctoproject.org/poky'
+  if [ ! -f /home/yocto/poky ]; then
+    su -l yocto -c 'git clone git://git.yoctoproject.org/poky' || true
+  fi
 }
