@@ -5,7 +5,11 @@ function progress {
 }
 
 function log {
-  tee -a $LOG_DIR/$1.log >> $LOG_DIR/makeroot.log
+  if [ ! -n "${VERBOSE}" ]; then
+    tee -a $LOG_DIR/$1.log >> $LOG_DIR/makeroot.log
+  else
+    tee -a $LOG_DIR/$1.log | tee -a $LOG_DIR/makeroot.log
+  fi
 }
 
 function run {
