@@ -1,46 +1,126 @@
 #!/bin/bash
-
+set -e
 function progress {
-  echo -n "-> $1"
+  echo -ne "\033[1;32m ->\033[0m $1"
+}
+
+function header {
+  echo -e "\033[1;34m::\033[0m $1"
 }
 
 function log {
   if [ ! -n "${VERBOSE}" ]; then
-    tee -a $LOG_DIR/$1.log >> $LOG_DIR/makeroot.log
+    tee -a $LOG_DIR/$RECIPE/$1.log >> $LOG_DIR/makeroot.log
   else
-    tee -a $LOG_DIR/$1.log | tee -a $LOG_DIR/makeroot.log
+    tee -a $LOG_DIR/$RECIPE/$1.log | tee -a $LOG_DIR/makeroot.log
   fi
 }
 
-function run {
-  progress "$1 "
+function load_recipe {
+  match=false
 
-  trap "echo -e '[\033[91;1mERROR\033[0m]\033[2m'; tail $LOG_DIR/$1.log; echo -e '\033[0m'; exit 1" ERR
-  tbegin=$(date +%s)
-  $1 2>&1 | log $1 ; test ${PIPESTATUS[0]} -eq 0
-  duration=$(expr $(date +%s) - $tbegin || true)
+  # search recipe
+  for folder in recipes/*; do
+    if [ -f $folder/$1/recipe ]; then
+      LAYER=$(basename $folder)
+      source $folder/$1/recipe
+      match=true
+      break
+    fi
+  done
 
-  if [ "$duration" = "0" ]; then
+  if [ "$match" = "false" ]; then
+    echo -e "\033[2m[ERROR]\033[0m"
+    echo -e "\033[33mRecipe \`$1\` not found.\033[0m"
     echo
-  else
-    echo "[$duration seconds]"
+    exit 1
   fi
+}
+
+function build_depends {
+  unset DEPENDS
+
+  progress "$1 "
+  load_recipe $1 && echo -e "\033[2m[$LAYER]\033[0m"
+
+  TASKS="${DEPENDS} ${TASKS}"
+
+  for dep in ${DEPENDS}; do
+    build_depends $dep
+  done
+}
+
+function build_recipe {
+  # clear used variables
+  unset TITLE
+  unset DESCRIPTION
+  unset DEPENDS
+  unset FILES
+
+  for entry in $build_steps; do
+    step=$(echo $entry | cut -d : -f 2)
+    unset $step
+  done
+
+  RECIPE=$1
+
+  load_recipe $1
+
+  # create log directory
+  mkdir -p $LOG_DIR/$RECIPE/
+
+  header "Building $RECIPE"
+
+  # run all build steps
+  if [ -n "${FILES}" ]; then run do_files; fi
+
+  for entry in $build_steps; do
+    opts=$(echo $entry | cut -d : -f 1)
+    step=$(echo $entry | cut -d : -f 2)
+
+    # only run existing functions
+    if declare -f $step &> /dev/null; then
+      if [ $opts = "1" ]; then
+        container_run $step
+      else
+        run $step
+      fi
+    fi
+  done
 }
 
 function do_files {
   for file in $FILES; do
     mkdir -p $ROOTFS_DIR/var/files
-    if [ -f recipes/$RECIPE/files/$file ]; then
-      cp -Rv recipes/$RECIPE/files/$file $ROOTFS_DIR/var/files | log do_files
+    if [ -f recipes/$LAYER/$RECIPE/files/$file ]; then
+      cp -Rv recipes/$LAYER/$RECIPE/files/$file $ROOTFS_DIR/var/files | log do_files
     elif [ -f $file ]; then
       cp -Rv $file $ROOTFS_DIR/var/files | log do_files
     else
-      echo "WARNING: $file not found."
+      echo "File \`$file\` not found."
+      exit 1
     fi
   done
 }
 
-function do_container {
+function run {
+  progress "$1 "
+
+  trap "echo -e '\033[2m[ERROR]\033[0;33m'; tail $LOG_DIR/$RECIPE/$1.log; echo -e '\033[0m'; exit 1" ERR
+
+  tbegin=$(date +%s)
+  $1 2>&1 | log $1 ; test ${PIPESTATUS[0]} -eq 0
+  duration=$(expr $(date +%s) - $tbegin || echo 0 &> /dev/null)
+
+  if [ "$duration" = "1" ]; then
+    echo -e "\033[2m[${duration} Second]\033[0m"
+  else
+    echo -e "\033[2m[${duration} Seconds]\033[0m"
+  fi
+
+}
+
+function container_start {
   # create container metadata
   echo "lxc.include = /usr/share/lxc/config/common.conf" > ${TARGET_DIR}/config
   echo "lxc.rootfs.path = dir:/var/lib/lxc/${RECIPE}/rootfs" >> ${TARGET_DIR}/config
@@ -49,17 +129,9 @@ function do_container {
   echo "lxc.net.0.type = none" >> ${TARGET_DIR}/config
 
   # launch the container
-  container_start
-
-  # copy resolv.conf into rootfs
-  rm -f ${ROOTFS_DIR}/etc/resolv.conf
-  cp -L /etc/resolv.conf ${ROOTFS_DIR}/etc/resolv.conf
-}
-
-function container_start {
   if [ "$CONTAINER_BACKEND" = "lxc" ]; then
     # start the container
-    lxc-start -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -s lxc.rootfs.path=${BASE_DIR}/${ROOTFS_DIR} -l DEBUG
+    lxc-start -n ${BASE_RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -s lxc.rootfs.path=${BASE_DIR}/${ROOTFS_DIR} -l DEBUG
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
     # prepare the container
     mount -t devtmpfs none $ROOTFS_DIR/dev
@@ -72,17 +144,28 @@ function container_start {
     echo "Unknown container backend \"$CONTAINER_BACKEND\""
     exit 1
   fi
+
+  CONTAINER_STATE=1
+
+  # copy resolv.conf into rootfs
+  rm -f ${ROOTFS_DIR}/etc/resolv.conf
+  cp -L /etc/resolv.conf ${ROOTFS_DIR}/etc/resolv.conf
 }
 
 function container_stop {
   if [ "$CONTAINER_BACKEND" = "lxc" ]; then
-    lxc-stop -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR}
+    lxc-stop -n ${BASE_RECIPE} -P ${BASE_DIR}/${BUILD_DIR}
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
     umount -R $ROOTFS_DIR/dev/{pts,shm} $ROOTFS_DIR/dev $ROOTFS_DIR/proc $ROOTFS_DIR/sys $ROOTFS_DIR/tmp
   fi
+  CONTAINER_STATE=0
 }
 
 function container_run {
+  if [ "${CONTAINER_STATE}" = "0" ]; then
+    container_start
+  fi
+
   # place function inside rootfs
   declare -f $1 > $ROOTFS_DIR/tmp/$1.sh
   echo $1 >> $ROOTFS_DIR/tmp/$1.sh
@@ -90,13 +173,13 @@ function container_run {
 
   # set the proper container run command
   if [ "$CONTAINER_BACKEND" = "lxc" ]; then
-    export CONTAINER_CMD="lxc-attach -n ${RECIPE} -P ${BASE_DIR}/${BUILD_DIR} --"
+    export CONTAINER_CMD="lxc-attach -n ${BASE_RECIPE} -P ${BASE_DIR}/${BUILD_DIR} --"
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
     export CONTAINER_CMD="chroot $ROOTFS_DIR"
   fi
 
   # convert function to be runnable on host
-  eval "function $(echo $1) { $CONTAINER_CMD /bin/bash /tmp/$1.sh; }"
+  eval "function $(echo $1) { $CONTAINER_CMD /bin/bash -e /tmp/$1.sh; }"
 
   # run the function
   run $1

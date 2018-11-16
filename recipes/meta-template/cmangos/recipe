@@ -1,5 +1,5 @@
 DESCRIPTION="CMaNGOS is an open-source MMO server suite for World of Warcraft"
-DISTRO=ubuntu-xenial
+DEPENDS="ubuntu-xenial"
 
 FILES="\
   WoW-1.12.1.zip \

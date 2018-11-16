@@ -8,20 +8,29 @@ TARGET_DIR=${TARGET_DIR:-$BUILD_DIR/$RECIPE}
 ROOTFS_DIR=${ROOTFS_DIR:-$TARGET_DIR/rootfs}
 LOG_DIR=${LOG_DIR:-$TARGET_DIR/logs}
 CONTAINER_BACKEND=${CONTAINER_BACKEND:-lxc}
+BASE_RECIPE=$RECIPE
+TASKS=$BASE_RECIPE
+CONTAINER_STATE=0
 
 # load user config if exists
 if [ -f $BUILD_DIR/local.conf ]; then
   source $BUILD_DIR/local.conf
 fi
 
-# load recipe informations
-source recipes/$RECIPE/recipe
-source distros/$DISTRO
+# load recipe data
+for folder in recipes/*; do
+  if [ -f $folder/$RECIPE/recipe ]; then
+    LAYER=$(basename $folder)
+    source $folder/$RECIPE/recipe
+    break
+  fi
+done
 
+# print build info
 echo
 echo "##"
-echo "# RECIPE: $RECIPE"
-echo "# DISTRO: $DISTRO"
+echo -e "# RECIPE: \033[1m$RECIPE\033[0m"
+echo -e "# LAYER:  \033[1m$LAYER\033[0m"
 echo "#"
 echo
 echo "To view the complete log, run:"
@@ -34,28 +43,21 @@ source core/helpers
 
 # prepare target dir
 mkdir -p $ROOTFS_DIR
-mkdir -p $LOG_DIR
 
 # clean old logs
-rm -f $LOG_DIR/*.log
+rm -rf $LOG_DIR/
 
 # create a trap to properly clean up on exit
 trap container_stop EXIT INT
 
-# run all build steps
-for entry in $build_steps; do
-  opts=$(echo $entry | cut -d : -f 1)
-  step=$(echo $entry | cut -d : -f 2)
+# load all tasks/dependencies
+header "Loading Tasks"
+build_depends $BASE_RECIPE
 
-  # only run existing functions
-  if declare -f $step &> /dev/null; then
-    if [ $opts = "1" ]; then
-      container_run $step
-    else
-      run $step
-    fi
-  fi
+# start the build
+for task in $TASKS; do
+  build_recipe $task
 done
 
-echo
-echo "Build of \"$RECIPE\" completed after $(expr $(date +%s) - $START_TIME) seconds."
+# print message when done
+echo -e "\n\033[1mBuild of \"$BASE_RECIPE\" completed after $(expr $(date +%s) - $START_TIME) seconds.\033[0m"
