@@ -39,10 +39,8 @@ mkdir -p $LOG_DIR
 # clean old logs
 rm -f $LOG_DIR/*.log
 
-if [ ! -f $ROOTFS_DIR/bin/bash ] || [ -n "${REBUILD}" ]; then
-  # prepare distro
-  run do_distro
-fi
+# prepare distro
+run do_distro
 
 # initialize the container
 run do_container

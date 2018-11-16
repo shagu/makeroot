@@ -1,4 +1,9 @@
 do_distro () {
+  if [ -f $ROOTFS_DIR/bin/bash ] && [ ! -n "${REBUILD}" ]; then
+    echo "Seems like debootstrap did already ran. Nothing to do."
+    exit
+  fi
+
   debootstrap xenial $ROOTFS_DIR http://archive.ubuntu.com/ubuntu/
   sed -i 's/xenial main$/xenial main universe multiverse/g' $ROOTFS_DIR/etc/apt/sources.list
   cp -L /etc/resolv.conf $ROOTFS_DIR/etc/resolv.conf
