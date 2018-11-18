@@ -1,0 +1,31 @@
+DESCRIPTION="Sony Xperia XZ1 Compact AOSP Build Container"
+DEPENDS="ubuntu-xenial"
+
+do_depends () {
+  # enable 32bit packages
+  dpkg --add-architecture i386
+  apt-get update -y
+
+  # aosp dependencies
+  apt-get install -y bison g++-multilib git gperf libxml2-utils make \
+    zlib1g-dev:i386 zip liblz4-tool libncurses5 openjdk-8-jdk repo
+}
+
+do_prepare () {
+  # write basic git config as repo-tool requires one
+  su -l ubuntu -c 'git config --global user.email "build@aosp"'
+  su -l ubuntu -c 'git config --global user.name "AOSP Build Bot"'
+}
+
+do_compile () {
+  # print build instructions on login
+  echo "echo run 'repo init -u https://android.googlesource.com/platform/manifest -b android-9.0.0_r16'" >> /home/ubuntu/.bashrc
+  echo "echo run 'cd .repo && git clone -b android-9.0.0_r16 https://github.com/sonyxperiadev/local_manifests'" >> /home/ubuntu/.bashrc
+  echo "echo run 'repo sync'" >> /home/ubuntu/.bashrc
+  echo "echo run './repo_update.sh'" >> /home/ubuntu/.bashrc
+  echo "echo" >> /home/ubuntu/.bashrc
+  echo "echo run 'source build/envsetup.sh && lunch'" >> /home/ubuntu/.bashrc
+  echo "echo run 'make –j <insert the cpu thread number of your computer>'" >> /home/ubuntu/.bashrc
+  echo "echo" >> /home/ubuntu/.bashrc
+  echo "echo https://developer.sony.com/develop/open-devices/guides/aosp-build-instructions/" >> /home/ubuntu/.bashrc
+}
