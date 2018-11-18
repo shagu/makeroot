@@ -8,6 +8,7 @@ TARGET_DIR=${TARGET_DIR:-$BUILD_DIR/$RECIPE}
 ROOTFS_DIR=${ROOTFS_DIR:-$TARGET_DIR/rootfs}
 LOG_DIR=${LOG_DIR:-$TARGET_DIR/logs}
 CONTAINER_BACKEND=${CONTAINER_BACKEND:-lxc}
+RECIPE_DIRS=${RECIPE_DIRS}
 BASE_RECIPE=$RECIPE
 TASKS=$BASE_RECIPE
 CONTAINER_STATE=0
@@ -18,7 +19,7 @@ if [ -f $BUILD_DIR/local.conf ]; then
 fi
 
 # load recipe data
-for folder in recipes/*; do
+for folder in recipes/* ${RECIPE_DIRS}; do
   if [ -f $folder/$RECIPE/recipe ]; then
     LAYER=$(basename $folder)
     source $folder/$RECIPE/recipe

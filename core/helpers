@@ -20,7 +20,7 @@ function load_recipe {
   match=false
 
   # search recipe
-  for folder in recipes/*; do
+  for folder in recipes/* ${RECIPE_DIRS}; do
     if [ -f $folder/$1/recipe ]; then
       LAYER=$(basename $folder)
       source $folder/$1/recipe
