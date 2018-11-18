@@ -154,7 +154,7 @@ function container_start {
 
 function container_stop {
   if [ "$CONTAINER_BACKEND" = "lxc" ]; then
-    lxc-stop -n ${BASE_RECIPE} -P ${BASE_DIR}/${BUILD_DIR}
+    lxc-stop -n ${BASE_RECIPE} -P ${BASE_DIR}/${BUILD_DIR} -l DEBUG
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
     umount -R $ROOTFS_DIR/dev/{pts,shm} $ROOTFS_DIR/dev $ROOTFS_DIR/proc $ROOTFS_DIR/sys $ROOTFS_DIR/tmp
   fi
