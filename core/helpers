@@ -123,8 +123,8 @@ function run {
 function container_start {
   # create container metadata
   echo "lxc.include = /usr/share/lxc/config/common.conf" > ${TARGET_DIR}/config
-  echo "lxc.rootfs.path = dir:/var/lib/lxc/${RECIPE}/rootfs" >> ${TARGET_DIR}/config
-  echo "lxc.uts.name = $RECIPE" >> ${TARGET_DIR}/config
+  echo "lxc.rootfs.path = dir:/var/lib/lxc/${BASE_RECIPE}/rootfs" >> ${TARGET_DIR}/config
+  echo "lxc.uts.name = $BASE_RECIPE" >> ${TARGET_DIR}/config
   echo "lxc.arch = amd64" >> ${TARGET_DIR}/config
   echo "lxc.net.0.type = none" >> ${TARGET_DIR}/config
 
