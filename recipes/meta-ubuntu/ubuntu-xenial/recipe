@@ -7,3 +7,9 @@ do_distro () {
     cp -L /etc/resolv.conf $ROOTFS_DIR/etc/resolv.conf
   fi
 }
+
+do_prepare () {
+  if ! grep /etc/passwd ubuntu; then
+    useradd ubuntu -m -G users,sudo || true
+  fi
+}
