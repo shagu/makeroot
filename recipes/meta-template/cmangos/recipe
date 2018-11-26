@@ -2,16 +2,42 @@ DESCRIPTION="CMaNGOS is an open-source MMO server suite for World of Warcraft"
 DEPENDS="ubuntu-xenial"
 
 FILES="\
-  WoW-1.12.1.zip \
-  WoW-2.4.3.zip \
-  WoW-3.3.5a.zip \
+  mysql_defaults.sql \
 "
 
 do_depends () {
+  export DEBIAN_FRONTEND=noninteractive
+
   apt-get update
-  apt-get install -y libace-dev git build-essential \
+  apt-get install -yy phpmyadmin mariadb-server
+
+  mysql -sfu root < "/tmp/files/mysql_defaults.sql"
+
+  apt-get install -yy libace-dev git build-essential \
     gcc g++ automake autoconf make patch libmysql++-dev libtool \
     libssl-dev grep binutils zlibc libc6 libbz2-dev cmake \
     libboost-dev libboost-system-dev libboost-program-options-dev \
     libboost-thread-dev libboost-regex-dev
+}
+
+do_compile () {
+  su -l ubuntu -c 'git clone git://github.com/cmangos/mangos-classic.git'
+  su -l ubuntu -c 'git clone https://github.com/cmangos/classic-db.git'
+  su -l ubuntu -c 'mkdir mangos-classic/build'
+  su -l ubuntu -c 'cd mangos-classic/build && cmake .. \
+    -DBUILD_EXTRACTORS=1 \
+    -DCMAKE_INSTALL_PREFIX=/home/ubuntu/run'
+
+  su -l ubuntu -c 'cd mangos-classic/build && make -j4'
+}
+
+
+do_install () {
+  su -l ubuntu -c 'cd mangos-classic/build && make install'
+  mysql -u root -p < mangos-classic/sql/create/db_create_mysql.sql
+  mysql -u root -p characters < mangos-classic/sql/base/characters.sql
+  mysql -u root -p mangos < mangos-classic/sql/base/mangos.sql
+  mysql -u root -p realmd < mangos-classic/sql/base/realmd.sql
+  mysql -u root -p mangos < mangos-classic/sql/scriptdev2/scriptdev2.sql
+  mysql -u root -p mangos < classic-db/Full_DB/ClassicDB_*.sql
 }
