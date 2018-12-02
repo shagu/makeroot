@@ -179,7 +179,7 @@ function container_run {
   fi
 
   # convert function to be runnable on host
-  eval "function $(echo $1) { $CONTAINER_CMD /bin/bash -e /tmp/$1.sh; }"
+  eval "function $(echo $1) { $CONTAINER_CMD /bin/bash -xe /tmp/$1.sh; }"
 
   # run the function
   run $1
