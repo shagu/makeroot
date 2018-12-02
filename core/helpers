@@ -91,11 +91,11 @@ function build_recipe {
 
 function do_files {
   for file in $FILES; do
-    mkdir -p $ROOTFS_DIR/tmp/files
+    mkdir -p $ROOTFS_DIR/var/files
     if [ -f recipes/$LAYER/$RECIPE/files/$file ]; then
-      cp -Rv recipes/$LAYER/$RECIPE/files/$file $ROOTFS_DIR/tmp/files | log do_files
+      cp -Rv recipes/$LAYER/$RECIPE/files/$file $ROOTFS_DIR/var/files | log do_files
     elif [ -f $file ]; then
-      cp -Rv $file $ROOTFS_DIR/tmp/files | log do_files
+      cp -Rv $file $ROOTFS_DIR/var/files | log do_files
     else
       echo "File \`$file\` not found."
       exit 1
