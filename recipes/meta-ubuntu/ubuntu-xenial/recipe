@@ -9,7 +9,7 @@ do_distro () {
 }
 
 do_prepare () {
-  if ! grep /etc/passwd ubuntu; then
+  if ! grep /etc/passwd ubuntu 2> /dev/null; then
     useradd ubuntu -m -G users,sudo || true
     echo "ubuntu:ubuntu" | chpasswd
   fi
