@@ -1,0 +1,16 @@
+[Unit]
+Description=CMaNGOS Realm Server
+After=mysql
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+
+WorkingDirectory=/home/ubuntu/run/bin
+ExecStart=/home/ubuntu/run/bin/realmd
+
+Restart=always
+RestartSec=5s

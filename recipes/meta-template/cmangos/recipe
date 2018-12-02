@@ -3,6 +3,9 @@ DEPENDS="ubuntu-xenial"
 
 FILES="\
   mysql_defaults.sql \
+  realmd.service \
+  mangosd.service \
+  WoW-1.12.1-enUS.zip \
 "
 
 do_depends () {
@@ -11,33 +14,59 @@ do_depends () {
   apt-get update
   apt-get install -yy phpmyadmin mariadb-server
 
-  mysql -sfu root < "/tmp/files/mysql_defaults.sql"
+  mysql -sfu root < /var/files/mysql_defaults.sql
 
   apt-get install -yy libace-dev git build-essential \
     gcc g++ automake autoconf make patch libmysql++-dev libtool \
     libssl-dev grep binutils zlibc libc6 libbz2-dev cmake \
     libboost-dev libboost-system-dev libboost-program-options-dev \
-    libboost-thread-dev libboost-regex-dev
+    libboost-thread-dev libboost-regex-dev unzip
 }
 
 do_compile () {
-  su -l ubuntu -c 'git clone git://github.com/cmangos/mangos-classic.git'
-  su -l ubuntu -c 'git clone https://github.com/cmangos/classic-db.git'
-  su -l ubuntu -c 'mkdir mangos-classic/build'
+  # clone the core and databse
+  su -l ubuntu -c 'git clone git://github.com/cmangos/mangos-classic.git || ( cd mangos-classic && git pull )'
+  su -l ubuntu -c 'git clone https://github.com/cmangos/classic-db.git || ( cd classic-db && git pull )'
+
+  # build and install the core
+  su -l ubuntu -c 'mkdir -p mangos-classic/build'
   su -l ubuntu -c 'cd mangos-classic/build && cmake .. \
     -DBUILD_EXTRACTORS=1 \
     -DCMAKE_INSTALL_PREFIX=/home/ubuntu/run'
 
-  su -l ubuntu -c 'cd mangos-classic/build && make -j4'
-}
+  su -l ubuntu -c 'cd mangos-classic/build && make -j8 && make install'
 
+  # populate database
+  mysql -u root -pmangos < /home/ubuntu/mangos-classic/sql/create/db_create_mysql.sql || true
+  mysql -u root -pmangos classiccharacters < /home/ubuntu/mangos-classic/sql/base/characters.sql
+  mysql -u root -pmangos classicmangos < /home/ubuntu/mangos-classic/sql/base/mangos.sql
+  mysql -u root -pmangos classicrealmd < /home/ubuntu/mangos-classic/sql/base/realmd.sql
+  mysql -u root -pmangos classicmangos < /home/ubuntu/mangos-classic/sql/scriptdev2/scriptdev2.sql
+  mysql -u root -pmangos classicmangos < /home/ubuntu/classic-db/Full_DB/ClassicDB_*.sql
 
-do_install () {
-  su -l ubuntu -c 'cd mangos-classic/build && make install'
-  mysql -u root -p < mangos-classic/sql/create/db_create_mysql.sql
-  mysql -u root -p characters < mangos-classic/sql/base/characters.sql
-  mysql -u root -p mangos < mangos-classic/sql/base/mangos.sql
-  mysql -u root -p realmd < mangos-classic/sql/base/realmd.sql
-  mysql -u root -p mangos < mangos-classic/sql/scriptdev2/scriptdev2.sql
-  mysql -u root -p mangos < classic-db/Full_DB/ClassicDB_*.sql
+  # create maps
+  rm -rf /home/ubuntu/gameclient
+  su -l ubuntu -c 'unzip -o /var/files/WoW-1.12.1-enUS.zip -d ~/gameclient'
+  GAMECLIENT=$(dirname "$(find -name Scan.dll | head -n1)")
+  su -l ubuntu -c "mkdir -p /$GAMECLIENT/vmaps"
+  su -l ubuntu -c "mkdir -p /$GAMECLIENT/mmaps"
+  su -l ubuntu -c "cp /home/ubuntu/run/bin/tools/* /$GAMECLIENT/"
+  su -l ubuntu -c "cd /$GAMECLIENT; ./ad"
+  su -l ubuntu -c "cd /$GAMECLIENT; ./vmap_extractor"
+  su -l ubuntu -c "cd /$GAMECLIENT; ./vmap_assembler Buildings vmaps"
+  su -l ubuntu -c "cd /$GAMECLIENT; ./MoveMapGen --silent"
+  su -l ubuntu -c "cd /$GAMECLIENT; cp -rf dbc maps mmaps vmaps /home/ubuntu/run/bin"
+  rm -rf /home/ubuntu/gameclient
+
+  # setup
+  su -l ubuntu -c "cd /home/ubuntu/run/etc; mv realmd.conf.dist realmd.conf"
+  su -l ubuntu -c "cd /home/ubuntu/run/etc; mv mangosd.conf.dist mangosd.conf"
+  sed -i "s/Console.Enable = 1/Console.Enable = 0/g" /home/ubuntu/run/etc/mangosd.conf
+
+  # systemd service
+  cp /var/files/realmd.service /etc/systemd/system/
+  cp /var/files/mangosd.service /etc/systemd/system/
+
+  systemctl enable realmd
+  systemctl enable mangosd
 }
