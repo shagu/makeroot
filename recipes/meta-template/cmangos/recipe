@@ -41,8 +41,11 @@ do_compile () {
   mysql -u root -pmangos classiccharacters < /home/ubuntu/mangos-classic/sql/base/characters.sql
   mysql -u root -pmangos classicmangos < /home/ubuntu/mangos-classic/sql/base/mangos.sql
   mysql -u root -pmangos classicrealmd < /home/ubuntu/mangos-classic/sql/base/realmd.sql
-  mysql -u root -pmangos classicmangos < /home/ubuntu/mangos-classic/sql/scriptdev2/scriptdev2.sql
-  mysql -u root -pmangos classicmangos < /home/ubuntu/classic-db/Full_DB/ClassicDB_*.sql
+
+  # install main database
+  su -l ubuntu -c "cd /home/ubuntu/classic-db; ./InstallFullDB.sh || true" # create config
+  su -l ubuntu -c "cd /home/ubuntu/classic-db; sed -i 's;CORE_PATH="";CORE_PATH="../mangos-classic";g' ./InstallFullDB.config"
+  su -l ubuntu -c "cd /home/ubuntu/classic-db; ./InstallFullDB.sh" # apply updates
 
   # create maps
   rm -rf /home/ubuntu/gameclient
@@ -54,7 +57,7 @@ do_compile () {
   su -l ubuntu -c "cd /$GAMECLIENT; ./ad"
   su -l ubuntu -c "cd /$GAMECLIENT; ./vmap_extractor"
   su -l ubuntu -c "cd /$GAMECLIENT; ./vmap_assembler Buildings vmaps"
-  su -l ubuntu -c "cd /$GAMECLIENT; ./MoveMapGen --silent"
+  su -l ubuntu -c "cd /$GAMECLIENT; ./MoveMapGen --silent || true"
   su -l ubuntu -c "cd /$GAMECLIENT; cp -rf dbc maps mmaps vmaps /home/ubuntu/run/bin"
   rm -rf /home/ubuntu/gameclient
 
