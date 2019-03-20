@@ -23,6 +23,7 @@ function load_recipe {
   for folder in ${RECIPE_DIRS}; do
     if [ -f $folder/$1/recipe ]; then
       LAYER=$(basename $folder)
+      LAYER_DIR=$(dirname $folder)
       source $folder/$1/recipe
       match=true
       break
@@ -92,8 +93,8 @@ function build_recipe {
 function do_files {
   for file in $FILES; do
     mkdir -p $ROOTFS_DIR/var/files
-    if [ -f recipes/$LAYER/$RECIPE/files/$file ]; then
-      cp -Rv recipes/$LAYER/$RECIPE/files/$file $ROOTFS_DIR/var/files | log do_files
+    if [ -f $LAYER_DIR/$LAYER/$RECIPE/files/$file ]; then
+      cp -Rv $LAYER_DIR/$LAYER/$RECIPE/files/$file $ROOTFS_DIR/var/files | log do_files
     elif [ -f $file ]; then
       cp -Rv $file $ROOTFS_DIR/var/files | log do_files
     else
