@@ -127,6 +127,7 @@ function container_start {
   echo "lxc.uts.name = $BASE_RECIPE" >> ${TARGET_DIR}/config
   echo "lxc.arch = amd64" >> ${TARGET_DIR}/config
   echo "lxc.net.0.type = none" >> ${TARGET_DIR}/config
+  echo "lxc.mount.entry = none dev/shm tmpfs nodev,nosuid,noexec,mode=1777,create=dir 0 0" >> ${TARGET_DIR}/config
 
   # launch the container
   if [ "$CONTAINER_BACKEND" = "lxc" ]; then
