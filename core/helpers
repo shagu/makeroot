@@ -86,6 +86,10 @@ function build_recipe {
       else
         run $step
       fi
+    else
+      if [ $step = "do_image" ]; then
+        run do_image_tar
+      fi
     fi
   done
 }
@@ -102,6 +106,20 @@ function do_files {
       exit 1
     fi
   done
+}
+
+function do_image_tar() {
+  _WORK_DIR=$(dirname $ROOTFS_DIR)
+  _ROOTFS_DIR=$(basename $ROOTFS_DIR)
+
+  tar cpf $TARGET_DIR/$RECIPE-image.tar -C $TARGET_DIR config
+  tar upf $TARGET_DIR/$RECIPE-image.tar -C $_WORK_DIR \
+    --exclude="$_ROOTFS_DIR/dev/*" \
+    --exclude="$_ROOTFS_DIR/proc/*" \
+    --exclude="$_ROOTFS_DIR/sys/*" \
+    $_ROOTFS_DIR
+
+  xz -9 -f $TARGET_DIR/$RECIPE-image.tar
 }
 
 function run {
