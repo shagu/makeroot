@@ -137,7 +137,7 @@ function container_start {
   elif [ "$CONTAINER_BACKEND" = "chroot" ]; then
     # prepare the container
     mount -t devtmpfs none $ROOTFS_DIR/dev
-    mount -t devpts   none $ROOTFS_DIR/dev/pts
+    mount -t devpts   none $ROOTFS_DIR/dev/pts -o gid=5
     mount -t tmpfs    none $ROOTFS_DIR/dev/shm
     mount -t sysfs    none $ROOTFS_DIR/sys
     mount -t tmpfs    none $ROOTFS_DIR/tmp

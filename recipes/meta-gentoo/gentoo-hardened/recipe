@@ -1,0 +1,27 @@
+DESCRIPTION="gentoo-hardened linux distro"
+GENTOO_BASEURL="http://distfiles.gentoo.org"
+
+do_distro () {
+  if [ -f $ROOTFS_DIR/bin/bash ] && [ -z "$REBUILD" ]; then
+    echo "Seems like rootfs already exists. Nothing to do."
+  else
+    local latesturl="$GENTOO_BASEURL/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+    local latest=$(curl --silent $latesturl | tail -n 1 | awk '{ print $1 }')
+    local stage3=$TARGET_DIR/stage3-amd64-hardened.tar.xz
+    local portage=$TARGET_DIR/portage.tar.xz
+
+    wget $GENTOO_BASEURL/releases/amd64/autobuilds/$latest -O $stage3
+    wget $GENTOO_BASEURL/snapshots/portage-latest.tar.xz -O $portage
+
+    tar xJpf $stage3 -C $ROOTFS_DIR
+    tar xJpf $portage -C $ROOTFS_DIR/usr
+
+    cp -L /etc/resolv.conf $ROOTFS_DIR/etc/resolv.conf
+  fi
+}
+
+do_prepare() {
+  source /etc/profile && env-update
+
+  emerge -uNDq world
+}
